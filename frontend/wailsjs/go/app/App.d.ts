@@ -6,4 +6,4 @@ export function CreateFundraising(arg1:fundraising.FundraisingURL):Promise<numbe
 
 export function GetFundraisingList():Promise<Array<fundraising.FundraisingWithHistory>>;
 
-export function SyncFundraising(arg1:number):Promise<void>;
+export function SyncFundraising(arg1:number,arg2:boolean):Promise<void>;
