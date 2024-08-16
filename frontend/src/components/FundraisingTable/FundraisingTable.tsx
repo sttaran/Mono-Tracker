@@ -1,0 +1,97 @@
+import React from "react";
+import {fundraising} from "../../../wailsjs/go/models";
+import {Button, Table} from "antd";
+
+interface FundraisingTableProps {
+    items: fundraising.FundraisingWithHistory[]
+    handleSyncFundraising: (id: number) => void
+    isLoading: boolean
+}
+
+export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, isLoading, handleSyncFundraising}) => {
+    return (
+        <Table loading={isLoading} rowKey="id" dataSource={items} columns={[
+            {
+                title: 'Name',
+                dataIndex: 'name',
+                key: 'name',
+            },
+            {
+                title: 'Description',
+                dataIndex: 'description',
+                key: 'description',
+            },
+            {
+                title: 'Goal',
+                dataIndex: 'goal',
+                key: 'goal',
+                render: (text: number) => <span>{new Intl.NumberFormat("ua-UA").format(text)}</span>
+            },
+            {
+                title: 'Raised',
+                dataIndex: 'raised',
+                key: 'raised',
+                render: (text: number, record) => {
+                     const raised = record.history[0]?.raised
+                    const previousRaised = record.history[1]?.raised
+                    console.log(raised, previousRaised)
+                    return <div>
+                        <span>{raised ? new Intl.NumberFormat("ua-UA").format(raised) : "unknown"}</span>
+                        <br/>
+                        <span style={{color: raised && previousRaised && raised > previousRaised ? 'green' : 'red'}}>
+                            {raised && previousRaised && raised > previousRaised && '+' }
+                            {raised && previousRaised && raised < previousRaised && '-' }
+                            {raised && previousRaised ? `${new Intl.NumberFormat('ua-UA').format(Math.abs(raised - previousRaised))}` : ''}
+                        </span>
+                    </div>
+                }
+            },
+            {
+                title: 'History',
+                dataIndex: 'history',
+                key: 'history',
+                render: (data: fundraising.FundraisingWithHistory["history"]) => {
+                    const options = {
+                        year: "numeric",
+                        month: "numeric",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "numeric",
+                        second: "numeric",
+                        hour12: false,
+                        timeZone: "America/Los_Angeles",
+                    } as const
+
+                    // do not show last sync info in history
+                    const item: fundraising.FundraisingWithHistory["history"] = structuredClone(data)
+                    item.splice(0,1)
+                    return <div>
+                        {item.map((history) => <div key={history.id}>
+                        <span style={{
+                            color: 'gray'
+                        }}>{new Intl.DateTimeFormat("eu-DE",  options).format(new Date(history.sync_time))}{" "}</span>
+                            <span style={{
+                                color: 'green'
+                            }}>{new Intl.NumberFormat("ua-UA").format(history.raised)}</span>
+                        </div>)}
+                    </div>
+                }
+            },
+            {
+                title: 'URL',
+                dataIndex: 'url',
+                key: 'url',
+                render: (text: string) => <a href={text}>{text}</a>
+            },
+            {
+                title: 'Action',
+                key: 'action',
+                render: (text: string, record) => (
+                    <Button onClick={()=>handleSyncFundraising(record.id)}>
+                        Sync
+                    </Button>
+                ),
+            }
+        ]}/>
+    )
+}
