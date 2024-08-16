@@ -23,8 +23,8 @@ func (a *App) GetFundraisingList() ([]*fundraising.FundraisingWithHistory, error
 	return f, nil
 }
 
-func (a *App) SyncFundraising(id int) error {
-	err := a.fundraisingService.SynchronizeFundraising(id)
+func (a *App) SyncFundraising(id int, initial bool) error {
+	err := a.fundraisingService.SynchronizeFundraising(id, initial)
 	if err != nil {
 		return err
 	}

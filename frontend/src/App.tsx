@@ -35,7 +35,7 @@ function App() {
             console.log(response)
             alert('Fundraising created. Wait few seconds to sync')
             return response
-        }).then((response) => handleSyncFundraising(response))
+        }).then((response) => handleSyncFundraising(response, true))
             .catch((error) => {
             alert(`Error creating: ${error}` )
         }).finally(()=> {
@@ -44,11 +44,11 @@ function App() {
         })
     }
 
-    const handleSyncFundraising = async (id: number) => {
+    const handleSyncFundraising = async (id: number, initial = false) => {
         setIsLoading(true)
         try {
             try {
-                const response = await SyncFundraising(id);
+                const response = await SyncFundraising(id, initial);
                 handleGetFundraisingList();
                 alert('Fundraising synced');
             } catch (error) {

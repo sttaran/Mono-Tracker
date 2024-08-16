@@ -19,11 +19,12 @@ type IFundraisingService interface {
 	CreateFundraising(fundraising *Fundraising) (int, error)
 	UpdateFundraising(fundraising *Fundraising) error
 	DeleteFundraising(id int) error
-	SynchronizeFundraising(id int) error
+	SynchronizeFundraising(id int, initial bool) error
 }
 
 type FundraisingService struct {
 	db *pkg.SQLiteClient
+	pw *playwright.Playwright
 }
 
 func (s *FundraisingService) GetFundraisingHistory(id int) ([]fundraising_history.FundraisingHistory, error) {
@@ -43,25 +44,14 @@ func (s *FundraisingService) GetFundraisingHistory(id int) ([]fundraising_histor
 	return history, nil
 }
 
-func (s *FundraisingService) SynchronizeFundraising(id int) error {
+func (s *FundraisingService) SynchronizeFundraising(id int, initialSync bool) error {
 	var url string
 	err := s.db.Db.QueryRow("SELECT url FROM fundraising WHERE id = ?", id).Scan(&url)
 	if err != nil {
 		return err
 	}
 
-	pw, err := playwright.Run()
-	if err != nil {
-		println("could not start playwright: %v", err)
-	}
-
-	defer func(pw *playwright.Playwright) {
-		if err = pw.Stop(); err != nil {
-			println("could not stop Playwright: %v", err)
-		}
-	}(pw)
-
-	browser, err := pw.Chromium.Launch()
+	browser, err := s.pw.Chromium.Launch()
 	if err != nil {
 		println("could not launch browser: %v", err)
 	}
@@ -69,18 +59,29 @@ func (s *FundraisingService) SynchronizeFundraising(id int) error {
 	if err != nil {
 		println("could not create page: %v", err)
 	}
-	if _, err = page.Goto(string(url)); err != nil {
+	defer func(page playwright.Page) {
+		if err = page.Close(); err != nil {
+			println("could not close page: %v", err)
+		}
+	}(page)
+
+	if _, err = page.Goto(url); err != nil {
 		println("could not goto: %v", err)
 	}
 
-	errFinished := page.Locator(".done-jar-sub-text").WaitFor()
+	errFinished := page.Locator(".done-jar-sub-text").WaitFor(
+		playwright.LocatorWaitForOptions{
+			Timeout: playwright.Float(2000),
+		})
 	if errFinished == nil {
 		return errors.New("fundraising is finished")
 	}
+	log.Info("AFTER FUNDRAISING CHECK")
 
 	raised, err := page.Locator(".stats-data").First().Locator(".stats-data-value").InnerText()
 	raised = strings.Replace(raised, "₴", "", -1)
 	raised = strings.ReplaceAll(raised, "\u00a0", "")
+	log.Info("AFTER RAISED")
 
 	// convert raised to float
 	raisedParsed, err := strconv.ParseFloat(raised, 64)
@@ -93,28 +94,29 @@ func (s *FundraisingService) SynchronizeFundraising(id int) error {
 		println("Could not get goal")
 	}
 
-	goal = strings.Replace(goal, "₴", "", -1)
-	goal = strings.ReplaceAll(goal, "\u00a0", "")
-	// convert goal to float
-	goalParsed, err := strconv.ParseFloat(goal, 64)
-	if err != nil {
-		println("Could not parse goal")
-	}
-	println("goal", goalParsed)
+	if initialSync {
+		goal = strings.Replace(goal, "₴", "", -1)
+		goal = strings.ReplaceAll(goal, "\u00a0", "")
+		// convert goal to float
+		goalParsed, err := strconv.ParseFloat(goal, 64)
+		if err != nil {
+			println("Could not parse goal")
+		}
+		log.Info("AFTER GOAL")
 
-	description, err := page.Locator(".description-box").InnerText()
-	name, err := page.Locator("h1").InnerText()
+		log.Info("BEFORE description")
+		description, err := page.Locator(".description-box").InnerText()
+		log.Info("BEFORE name")
+		name, err := page.Locator("h1").InnerText()
 
-	_, err = s.db.Db.Exec("UPDATE fundraising SET name = ?, description = ?, goal = ? WHERE url = ?", name, description, goalParsed, url)
-	if err != nil {
-		println("Could not update fundraising", err.Error())
-		println("name", name)
-		println("description", description)
-		println("goal", goalParsed)
-		println("url", url)
-		log.Error(err)
-		return err
+		log.Info("BEFORE DB 1")
+		_, err = s.db.Db.Exec("UPDATE fundraising SET name = ?, description = ?, goal = ? WHERE url = ?", name, description, goalParsed, url)
+		if err != nil {
+			return err
+		}
 	}
+
+	log.Info("BEFORE DB 2")
 
 	_, err = s.db.Db.Exec("INSERT INTO fundraising_history (fundraising_id, raised, sync_time) VALUES (?, ?, ?)", id, raisedParsed, time.Now().Format(time.RFC3339))
 	if err != nil {
@@ -125,9 +127,10 @@ func (s *FundraisingService) SynchronizeFundraising(id int) error {
 
 }
 
-func NewFundraisingService(db *pkg.SQLiteClient) IFundraisingService {
+func NewFundraisingService(db *pkg.SQLiteClient, pw *playwright.Playwright) IFundraisingService {
 	return &FundraisingService{
 		db: db,
+		pw: pw,
 	}
 }
 
@@ -159,23 +162,14 @@ func (s *FundraisingService) GetFundraisings() ([]*FundraisingWithHistory, error
 }
 
 func (s *FundraisingService) isFundraisingValid(url string) (bool, error) {
+	log.Info("call isFundraisingValid")
 	_, err := urlNet.ParseRequestURI(url)
 	if err != nil {
 		return false, errors.New("invalid url")
 	}
 
-	pw, err := playwright.Run()
-	if err != nil {
-		println("could not start playwright: %v", err)
-	}
-
-	defer func(pw *playwright.Playwright) {
-		if err = pw.Stop(); err != nil {
-			println("could not stop Playwright: %v", err)
-		}
-	}(pw)
-
-	browser, err := pw.Chromium.Launch()
+	log.Info("BEFORE LAUNCH")
+	browser, err := s.pw.Chromium.Launch()
 	if err != nil {
 		println("could not launch browser: %v", err)
 	}
@@ -183,14 +177,27 @@ func (s *FundraisingService) isFundraisingValid(url string) (bool, error) {
 	if err != nil {
 		println("could not create page: %v", err)
 	}
-	if _, err = page.Goto(string(url)); err != nil {
+
+	defer func(page playwright.Page) {
+		if err = page.Close(); err != nil {
+			println("could not close page: %v", err)
+		}
+	}(page)
+
+	log.Info("BEFORE GOTO")
+	if _, err = page.Goto(url); err != nil {
 		println("could not goto: %v", err)
 	}
 
-	errFinished := page.Locator(".done-jar-sub-text").WaitFor()
+	log.Info("BEFORE WAIT")
+	errFinished := page.Locator(".done-jar-sub-text").WaitFor(
+		playwright.LocatorWaitForOptions{
+			Timeout: playwright.Float(2000),
+		})
 	if errFinished == nil {
 		return false, errors.New("fundraising is finished")
 	}
+	log.Info("AFTER WAIT")
 	return true, nil
 }
 
@@ -199,6 +206,7 @@ func (s *FundraisingService) CreateFundraising(fundraising *Fundraising) (id int
 		return 0, err
 	}
 
+	log.Info("BEFORE INSERTING INTO DB")
 	result, err := s.db.Db.Exec("INSERT INTO fundraising (name, description, goal, url) VALUES (?, ?, ?, ?)", fundraising.Name, fundraising.Description, fundraising.Goal, fundraising.URL)
 	if err != nil {
 		return 0, err

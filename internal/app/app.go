@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"github.com/playwright-community/playwright-go"
 	"log"
 	"mono-tracker/internal/domain/fundraising"
 	"mono-tracker/pkg"
@@ -11,14 +12,21 @@ import (
 type App struct {
 	ctx                context.Context
 	db                 *pkg.SQLiteClient
+	pw                 *playwright.Playwright
 	fundraisingService fundraising.IFundraisingService
 }
 
 // NewApp creates a new App application struct
 func NewApp(db *pkg.SQLiteClient) *App {
+	pw, err := playwright.Run()
+
+	if err != nil {
+		log.Fatal("could not start playwright")
+	}
 	return &App{
-		fundraisingService: fundraising.NewFundraisingService(db),
+		fundraisingService: fundraising.NewFundraisingService(db, pw),
 		db:                 db,
+		pw:                 pw,
 	}
 }
 
@@ -30,6 +38,13 @@ func (a *App) Startup(ctx context.Context) {
 		log.Fatal(err.Error())
 	}
 	a.ctx = ctx
+}
+
+func (a *App) Shutdown(ctx context.Context) {
+	err := a.pw.Stop()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 func (a *App) prepareDB(ctx context.Context) error {
