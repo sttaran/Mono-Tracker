@@ -17,7 +17,7 @@ type PlaywrightMonoFundraisingService struct {
 	pw *playwright.Playwright
 }
 
-func (s *PlaywrightMonoFundraisingService) GetFundraisingHistory(id int) ([]fundraising_history.FundraisingHistory, error) {
+func (s *PlaywrightMonoFundraisingService) getFundraisingHistory(id int) ([]fundraising_history.FundraisingHistory, error) {
 	rows, err := s.db.Db.Query("SELECT * FROM fundraising_history WHERE fundraising_id = ? ORDER BY sync_time DESC", id)
 	if err != nil {
 		return nil, err
@@ -115,10 +115,6 @@ func NewFundraisingService(db *pkg.SQLiteClient, pw *playwright.Playwright) IFun
 	}
 }
 
-func (s *PlaywrightMonoFundraisingService) GetFundraisingByID(id int) (*Fundraising, error) {
-	return &Fundraising{}, nil
-}
-
 func (s *PlaywrightMonoFundraisingService) GetFundraisings() ([]*FundraisingWithHistory, error) {
 	rows, err := s.db.Db.Query("SELECT * FROM fundraising")
 	if err != nil {
@@ -132,7 +128,7 @@ func (s *PlaywrightMonoFundraisingService) GetFundraisings() ([]*FundraisingWith
 		if err != nil {
 			return nil, err
 		}
-		fundraising.History, err = s.GetFundraisingHistory(fundraising.ID)
+		fundraising.History, err = s.getFundraisingHistory(fundraising.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -193,10 +189,6 @@ func (s *PlaywrightMonoFundraisingService) CreateFundraising(fundraising *Fundra
 
 	return int(id64), nil
 
-}
-
-func (s *PlaywrightMonoFundraisingService) UpdateFundraising(fundraising *Fundraising) error {
-	return nil
 }
 
 func (s *PlaywrightMonoFundraisingService) DeleteFundraising(id int) error {
