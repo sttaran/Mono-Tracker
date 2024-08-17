@@ -31,3 +31,12 @@ func (a *App) SyncFundraising(id int, initial bool) error {
 
 	return nil
 }
+
+func (a *App) DeleteFundraising(id int) error {
+	err := a.fundraisingService.DeleteFundraising(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

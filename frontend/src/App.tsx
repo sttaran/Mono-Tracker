@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import './App.css';
 import {RegularLayout} from "./layout/RegularLayout";
 import {FundraisingTable} from "./components/FundraisingTable/FundraisingTable";
-import {CreateFundraising, GetFundraisingList, SyncFundraising} from "../wailsjs/go/app/App";
+import {CreateFundraising, DeleteFundraising, GetFundraisingList, SyncFundraising} from "../wailsjs/go/app/App";
 import {fundraising} from "../wailsjs/go/models";
 import {Button, Input, Space} from "antd";
 
@@ -48,7 +48,7 @@ function App() {
         setIsLoading(true)
         try {
             try {
-                const response = await SyncFundraising(id, initial);
+                 await SyncFundraising(id, initial);
                 handleGetFundraisingList();
                 alert('Fundraising synced');
             } catch (error) {
@@ -58,6 +58,21 @@ function App() {
             setIsLoading(false);
         }
 
+    }
+
+    const handleDeleteFundraising = async (id: number) => {
+        setIsLoading(true)
+        try {
+            try {
+                await DeleteFundraising(id);
+                handleGetFundraisingList();
+                alert('Fundraising deleted');
+            } catch (error) {
+                alert(`Error deleting: ${error}`);
+            }
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
@@ -73,7 +88,7 @@ function App() {
                     <br/>
                     <br/>
                     </div>
-                <FundraisingTable isLoading={isLoading} handleSyncFundraising={handleSyncFundraising} items={fundraisings}/>
+                <FundraisingTable isLoading={isLoading} handleDeleteFundraising={handleDeleteFundraising} handleSyncFundraising={handleSyncFundraising} items={fundraisings}/>
             </RegularLayout>
         </div>
     )
