@@ -5,6 +5,7 @@ import (
 	"github.com/playwright-community/playwright-go"
 	"log"
 	"mono-tracker/internal/domain/fundraising"
+	"mono-tracker/internal/storage/sqlite3/fundraising_storage"
 	"mono-tracker/pkg"
 )
 
@@ -23,8 +24,12 @@ func NewApp(db *pkg.SQLiteClient) *App {
 	if err != nil {
 		log.Fatal("could not start playwright")
 	}
+
+	fst := fundraising_storage.NewStorage(db.Db)
+	infoProvider := fundraising.NewPlaywrightMonoFundraisingService(pw)
+	fs := fundraising.NewService(fst, infoProvider)
 	return &App{
-		fundraisingService: fundraising.NewFundraisingService(db, pw),
+		fundraisingService: fs,
 		db:                 db,
 		pw:                 pw,
 	}
