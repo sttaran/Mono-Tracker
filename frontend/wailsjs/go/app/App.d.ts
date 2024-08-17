@@ -4,6 +4,8 @@ import {fundraising} from '../models';
 
 export function CreateFundraising(arg1:fundraising.FundraisingURL):Promise<number>;
 
+export function DeleteFundraising(arg1:number):Promise<void>;
+
 export function GetFundraisingList():Promise<Array<fundraising.FundraisingWithHistory>>;
 
 export function SyncFundraising(arg1:number,arg2:boolean):Promise<void>;
