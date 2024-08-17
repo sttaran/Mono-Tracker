@@ -1,5 +1,11 @@
 package fundraising
 
+type Platform string
+
+const (
+	PlatformMonobank Platform = "monobank"
+)
+
 type FundraisingURL string
 
 type Fundraising struct {
