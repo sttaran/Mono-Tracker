@@ -2,7 +2,7 @@ package pkg
 
 import (
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // Config provides options to establish connection to MySQL db
@@ -25,7 +25,7 @@ func NewSQLiteClient(config *Config) *SQLiteClient {
 
 // Open new MySQL connection using passed to New func config
 func (m *SQLiteClient) Open() error {
-	db, err := sqlx.Connect("sqlite3", m.Config.ConnectionURL)
+	db, err := sqlx.Connect("sqlite", m.Config.ConnectionURL)
 	if err != nil {
 		return err
 	}
