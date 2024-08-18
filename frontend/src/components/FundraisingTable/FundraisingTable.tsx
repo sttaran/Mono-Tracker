@@ -1,14 +1,15 @@
 import React from "react";
 import {fundraising} from "../../../wailsjs/go/models";
-import {Button, Table} from "antd";
+import {Button, Popover, Space, Table, Typography} from "antd";
 
 interface FundraisingTableProps {
     items: fundraising.FundraisingWithHistory[]
     handleSyncFundraising: (id: number) => void
+    handleDeleteFundraising: (id: number) => void
     isLoading: boolean
 }
 
-export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, isLoading, handleSyncFundraising}) => {
+export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, isLoading, handleSyncFundraising, handleDeleteFundraising}) => {
     return (
         <Table loading={isLoading} rowKey="id" dataSource={items} columns={[
             {
@@ -59,7 +60,6 @@ export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, isLoad
                         minute: "numeric",
                         second: "numeric",
                         hour12: false,
-                        timeZone: "America/Los_Angeles",
                     } as const
 
                     // do not show last sync info in history
@@ -87,9 +87,27 @@ export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, isLoad
                 title: 'Action',
                 key: 'action',
                 render: (text: string, record) => (
-                    <Button onClick={()=>handleSyncFundraising(record.id)}>
-                        Sync
-                    </Button>
+                    <Space>
+                        <Button onClick={()=>handleSyncFundraising(record.id)}>
+                            Sync
+                        </Button>
+                        <Popover trigger="click" content={
+                            <Space direction="vertical" align="center">
+                                <Typography.Paragraph>
+                                    Fundraising will be deleted permanently.
+                                </Typography.Paragraph>
+
+                                <Button onClick={()=>handleDeleteFundraising(record.id)} danger type="primary">
+                                    DELETE
+                                </Button>
+                            </Space>
+                        }>
+                            <Button  type="dashed" danger>
+                                Delete
+                            </Button>
+                        </Popover>
+                    </Space>
+
                 ),
             }
         ]}/>
