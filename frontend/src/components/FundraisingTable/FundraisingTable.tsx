@@ -1,6 +1,10 @@
 import React from "react";
 import {fundraising} from "../../../wailsjs/go/models";
 import {Button, Popover, Space, Table, Typography} from "antd";
+import relativeTime from 'dayjs/plugin/relativeTime'
+import dayjs from "dayjs";
+
+dayjs.extend(relativeTime);
 
 interface FundraisingTableProps {
     items: fundraising.FundraisingWithHistory[]
@@ -9,9 +13,32 @@ interface FundraisingTableProps {
     isLoading: boolean
 }
 
+function getColorForPercent(percent: number) {
+    if (percent < 25) {
+        return 'red'
+    } else if (percent < 50) {
+        return 'orange'
+    } else if (percent < 75) {
+        return 'yellow'
+    } else {
+        return 'green'
+    }
+}
+
+function getColorForRaised(raised: number, previousRaised: number) {
+    switch (true) {
+        case raised > previousRaised:
+            return 'green'
+        case raised < previousRaised:
+            return 'red'
+        default:
+            return 'gray'
+    }
+}
+
 export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, isLoading, handleSyncFundraising, handleDeleteFundraising}) => {
     return (
-        <Table loading={isLoading} rowKey="id" dataSource={items} columns={[
+        <Table bordered loading={isLoading} rowKey="id" dataSource={items} columns={[
             {
                 title: 'Name',
                 dataIndex: 'name',
@@ -21,12 +48,25 @@ export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, isLoad
                 title: 'Description',
                 dataIndex: 'description',
                 key: 'description',
+                width: 400,
             },
+
             {
                 title: 'Goal',
                 dataIndex: 'goal',
                 key: 'goal',
                 render: (text: number) => <span>{new Intl.NumberFormat("ua-UA").format(text)}</span>
+            },
+            {
+                title: 'Raised %',
+                dataIndex: 'raised',
+                key: 'raised_percent',
+                render: (_: number, record) => {
+                    const value = record.goal && record.history[0]?.raised ?  Math.round((record.history[0]?.raised/ record.goal) * 100) : 0
+                    return <span style={{
+                        color: getColorForPercent(value)
+                    }}>{value}%</span>
+                }
             },
             {
                 title: 'Raised',
@@ -39,7 +79,7 @@ export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, isLoad
                     return <div>
                         <span>{raised ? new Intl.NumberFormat("ua-UA").format(raised) : "unknown"}</span>
                         <br/>
-                        <span style={{color: raised && previousRaised && raised > previousRaised ? 'green' : 'red'}}>
+                        <span style={{color: getColorForRaised(raised, previousRaised)}}>
                             {raised && previousRaised && raised > previousRaised && '+' }
                             {raised && previousRaised && raised < previousRaised && '-' }
                             {raised && previousRaised ? `${new Intl.NumberFormat('ua-UA').format(Math.abs(raised - previousRaised))}` : ''}
@@ -48,10 +88,18 @@ export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, isLoad
                 }
             },
             {
+                title: 'Last synced',
+                dataIndex: 'history',
+                key: 'last_synced',
+                render: (data: fundraising.FundraisingWithHistory["history"]) => {
+                    return <span>{data[0]?.sync_time ? dayjs().to(dayjs(data[0].sync_time)) : 'never'}</span>
+                }
+            },
+            {
                 title: 'History',
                 dataIndex: 'history',
                 key: 'history',
-                render: (data: fundraising.FundraisingWithHistory["history"]) => {
+                render: (item: fundraising.FundraisingWithHistory["history"]) => {
                     const options = {
                         year: "numeric",
                         month: "numeric",
@@ -62,9 +110,6 @@ export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, isLoad
                         hour12: false,
                     } as const
 
-                    // do not show last sync info in history
-                    const item: fundraising.FundraisingWithHistory["history"] = structuredClone(data)
-                    item.splice(0,1)
                     return <div>
                         {item.map((history) => <div key={history.id}>
                         <span style={{
@@ -107,7 +152,6 @@ export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, isLoad
                             </Button>
                         </Popover>
                     </Space>
-
                 ),
             }
         ]}/>
