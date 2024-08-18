@@ -43,8 +43,9 @@ func (s *Storage) GetFundraisings() ([]*fundraising.FundraisingWithHistory, erro
 	return fundraisings, nil
 }
 
+// Return last 10 fundraising history records
 func (s *Storage) getFundraisingHistory(id int) ([]fundraising_history.FundraisingHistory, error) {
-	rows, err := s.db.Query("SELECT * FROM fundraising_history WHERE fundraising_id = ? ORDER BY sync_time DESC", id)
+	rows, err := s.db.Query("SELECT * FROM fundraising_history WHERE fundraising_id = ? ORDER BY sync_time DESC LIMIT 10", id)
 	if err != nil {
 		return nil, err
 	}
