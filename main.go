@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"github.com/playwright-community/playwright-go"
+	"log"
 	appModule "mono-tracker/internal/app"
 	"mono-tracker/pkg"
 
@@ -17,11 +18,14 @@ var assets embed.FS
 func main() {
 	browsers := []string{"chromium"}
 	err := playwright.Install(&playwright.RunOptions{Browsers: browsers})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	const dbPath = "./mono-tracker"
 	dbClient := pkg.NewSQLiteClient(&pkg.Config{ConnectionURL: dbPath})
 	err = dbClient.Open()
 	if err != nil {
-		return
+		log.Fatal(err.Error())
 	}
 	// Create an instance of the app structure
 	app := appModule.NewApp(dbClient)
@@ -43,6 +47,6 @@ func main() {
 	})
 
 	if err != nil {
-		println("Error:", err.Error())
+		log.Fatal("Error:", err.Error())
 	}
 }
