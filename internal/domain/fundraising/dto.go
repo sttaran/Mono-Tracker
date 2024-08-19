@@ -1,10 +1,8 @@
 package fundraising
 
-import "mono-tracker/internal/domain/fundraising_history"
-
 type FundraisingWithHistory struct {
 	Fundraising
-	History []fundraising_history.FundraisingHistory `json:"history"`
+	History []FundraisingHistory `json:"history"`
 }
 
 type FundaisingInfo struct {
@@ -12,4 +10,20 @@ type FundaisingInfo struct {
 	Description string  `json:"description" db:"description"`
 	Goal        float64 `json:"goal" db:"goal"`
 	Raised      float64 `json:"raised" db:"raised"`
+}
+
+type fetchListDTOSort struct {
+	Column string `json:"column"`
+	Order  string `json:"order"`
+}
+
+type FetchListDTO struct {
+	Page  int              `json:"page"`
+	Limit int              `json:"limit"`
+	Sort  fetchListDTOSort `json:"sort"`
+}
+
+type FetchListResponse struct {
+	Total int                       `json:"total"`
+	Data  []*FundraisingWithHistory `json:"data"`
 }

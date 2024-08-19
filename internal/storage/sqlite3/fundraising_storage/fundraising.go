@@ -1,8 +1,8 @@
 package fundraising_storage
 
 import (
+	"fmt"
 	"mono-tracker/internal/domain/fundraising"
-	"mono-tracker/internal/domain/fundraising_history"
 	"time"
 )
 
@@ -20,8 +20,9 @@ func (s *Storage) CreateFundraising(f *fundraising.Fundraising) (int, error) {
 	return int(id64), nil
 }
 
-func (s *Storage) GetFundraisings() ([]*fundraising.FundraisingWithHistory, error) {
-	rows, err := s.db.Query("SELECT * FROM fundraising")
+func (s *Storage) GetFundraisings(dto *fundraising.FetchListDTO) (*fundraising.FetchListResponse, error) {
+	query := fmt.Sprintf("SELECT * FROM fundraising ORDER BY %s %s LIMIT %d OFFSET %d", dto.Sort.Column, dto.Sort.Order, dto.Limit, dto.Limit*(dto.Page-1))
+	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
@@ -39,19 +40,28 @@ func (s *Storage) GetFundraisings() ([]*fundraising.FundraisingWithHistory, erro
 		}
 		fundraisings = append(fundraisings, fundraising)
 	}
+	var total int
 
-	return fundraisings, nil
+	s.db.QueryRow("SELECT COUNT(*) FROM fundraising").Scan(&total)
+	if err != nil {
+		return nil, err
+	}
+
+	return &fundraising.FetchListResponse{
+		Total: total,
+		Data:  fundraisings,
+	}, nil
 }
 
 // Return last 10 fundraising history records
-func (s *Storage) getFundraisingHistory(id int) ([]fundraising_history.FundraisingHistory, error) {
+func (s *Storage) getFundraisingHistory(id int) ([]fundraising.FundraisingHistory, error) {
 	rows, err := s.db.Query("SELECT * FROM fundraising_history WHERE fundraising_id = ? ORDER BY sync_time DESC LIMIT 10", id)
 	if err != nil {
 		return nil, err
 	}
-	history := []fundraising_history.FundraisingHistory{}
+	history := []fundraising.FundraisingHistory{}
 	for rows.Next() {
-		h := fundraising_history.FundraisingHistory{}
+		h := fundraising.FundraisingHistory{}
 		err = rows.Scan(&h.ID, &h.FundraisingID, &h.Raised, &h.SyncTime)
 		if err != nil {
 			return nil, err

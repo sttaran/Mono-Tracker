@@ -11,6 +11,8 @@ interface FundraisingTableProps {
     handleSyncFundraising: (id: number) => void
     handleDeleteFundraising: (id: number) => void
     isLoading: boolean
+    handleChangePage: (page: number, pageSize: number) => void
+    total: number
 }
 
 function getColorForPercent(percent: number) {
@@ -36,9 +38,21 @@ function getColorForRaised(raised: number, previousRaised: number) {
     }
 }
 
-export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, isLoading, handleSyncFundraising, handleDeleteFundraising}) => {
+export const FundraisingTable: React.FC<FundraisingTableProps> = ({items, total, isLoading, handleSyncFundraising, handleChangePage ,handleDeleteFundraising}) => {
     return (
-        <Table bordered loading={isLoading} rowKey="id" dataSource={items} columns={[
+
+        <Table
+            pagination={{
+                position: ['bottomLeft'],
+                defaultPageSize: 10,
+                showSizeChanger: true,
+                pageSizeOptions: ['3', '5', '10', '100'],
+                onChange: (page, pageSize) => {
+                    handleChangePage(page, pageSize)
+                },
+                total: total
+            }}
+            bordered loading={isLoading} rowKey="id" dataSource={items} columns={[
             {
                 title: 'Name',
                 dataIndex: 'name',

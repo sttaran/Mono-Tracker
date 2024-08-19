@@ -12,8 +12,8 @@ func NewService(s IFundraisingStorage, ip IFundraisingInfoProvider) IFundraising
 	}
 }
 
-func (s Service) GetFundraisings() ([]*FundraisingWithHistory, error) {
-	list, err := s.storage.GetFundraisings()
+func (s Service) GetFundraisings(dto *FetchListDTO) (*FetchListResponse, error) {
+	list, err := s.storage.GetFundraisings(dto)
 	if err != nil {
 		return nil, err
 	}

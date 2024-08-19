@@ -6,6 +6,6 @@ export function CreateFundraising(arg1:fundraising.FundraisingURL):Promise<numbe
 
 export function DeleteFundraising(arg1:number):Promise<void>;
 
-export function GetFundraisingList():Promise<Array<fundraising.FundraisingWithHistory>>;
+export function GetFundraisingList(arg1:fundraising.FetchListDTO):Promise<fundraising.FetchListResponse>;
 
 export function SyncFundraising(arg1:number,arg2:boolean):Promise<void>;

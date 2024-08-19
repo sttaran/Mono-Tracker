@@ -1,7 +1,7 @@
 package fundraising
 
 type IFundraisingStorage interface {
-	GetFundraisings() ([]*FundraisingWithHistory, error)
+	GetFundraisings(dto *FetchListDTO) (*FetchListResponse, error)
 	GetFundraisingById(id int) (*Fundraising, error)
 	CreateFundraising(fundraising *Fundraising) (int, error)
 	AddFundraisingHistory(fundraisingID int, raised float64) error
@@ -15,7 +15,7 @@ type IFundraisingInfoProvider interface {
 }
 
 type IFundraisingService interface {
-	GetFundraisings() ([]*FundraisingWithHistory, error)
+	GetFundraisings(dto *FetchListDTO) (*FetchListResponse, error)
 	CreateFundraising(fundraising *Fundraising) (int, error)
 	DeleteFundraising(id int) error
 	SynchronizeFundraising(id int, initial bool) error
