@@ -5,16 +5,34 @@ import {FundraisingTable} from "./components/FundraisingTable/FundraisingTable";
 import {CreateFundraising, DeleteFundraising, GetFundraisingList, SyncFundraising} from "../wailsjs/go/app/App";
 import {fundraising} from "../wailsjs/go/models";
 import {Button, Input, Space} from "antd";
+import FetchListDTO = fundraising.FetchListDTO;
+import FundraisingWithHistory = fundraising.FundraisingWithHistory;
+import FetchListResponse = fundraising.FetchListResponse;
 
 function App() {
     const [fundraisingUrl, setFundraisingUrl] = useState('');
     const updateURL = (e: any) => setFundraisingUrl(e.target.value);
-    const [fundraisings, setFundraisings] = useState<fundraising.FundraisingWithHistory[]>([]);
+    const [fundraisings, setFundraisings] = useState<fundraising.FetchListResponse>(new FetchListResponse({data: [], total_pages: 1}));
     const [isLoading, setIsLoading] = useState(false);
+
+    const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
+    const [sortField, setSortField] = useState<keyof FundraisingWithHistory>('id');
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
+
 
     const handleGetFundraisingList = () => {
         setIsLoading(true)
-        GetFundraisingList().then((response) => {
+        const dto = new FetchListDTO({
+            page: page,
+            limit: limit,
+            sort: {
+                column: sortField,
+                order: sortOrder
+            }
+        })
+        console.log(dto)
+        GetFundraisingList(dto).then((response) => {
             console.log(response)
             setFundraisings(response)
         }).catch((error) => {
@@ -26,7 +44,7 @@ function App() {
 
     useEffect(() => {
         handleGetFundraisingList()
-    }, []);
+    }, [page, limit, sortField, sortOrder]);
 
 
     function createFundraising() {
@@ -75,6 +93,11 @@ function App() {
         }
     }
 
+    const handleChangePage = (page: number, size: number) => {
+        setPage(page)
+        setLimit(size)
+    }
+
     return (
         <div id="App">
             <RegularLayout>
@@ -88,7 +111,7 @@ function App() {
                     <br/>
                     <br/>
                     </div>
-                <FundraisingTable isLoading={isLoading} handleDeleteFundraising={handleDeleteFundraising} handleSyncFundraising={handleSyncFundraising} items={fundraisings}/>
+                <FundraisingTable total={fundraisings.total} handleChangePage={handleChangePage} isLoading={isLoading} handleDeleteFundraising={handleDeleteFundraising} handleSyncFundraising={handleSyncFundraising} items={fundraisings.data}/>
             </RegularLayout>
         </div>
     )

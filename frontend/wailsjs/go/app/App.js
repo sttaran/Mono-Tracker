@@ -10,8 +10,8 @@ export function DeleteFundraising(arg1) {
   return window['go']['app']['App']['DeleteFundraising'](arg1);
 }
 
-export function GetFundraisingList() {
-  return window['go']['app']['App']['GetFundraisingList']();
+export function GetFundraisingList(arg1) {
+  return window['go']['app']['App']['GetFundraisingList'](arg1);
 }
 
 export function SyncFundraising(arg1, arg2) {

@@ -16,6 +16,13 @@ type Fundraising struct {
 	URL         FundraisingURL `json:"url" db:"url"`
 }
 
+type FundraisingHistory struct {
+	ID            int     `json:"id" db:"id"`
+	FundraisingID int     `json:"fundraising_id" db:"fundraising_id"`
+	Raised        float64 `json:"raised" db:"raised"`
+	SyncTime      string  `json:"sync_time" db:"sync_time"`
+}
+
 func NewFundraising(url FundraisingURL) *Fundraising {
 	return &Fundraising{
 		ID:          0,
